@@ -14,22 +14,26 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.carloancalc.ui.theme.CarLoanCalcTheme
+import kotlin.math.pow
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,12 +70,42 @@ fun LoanPortrait(modifier: Modifier = Modifier, loanViewModel: LoanViewModel) {
             contentDescription = "hotRod",
             modifier = Modifier.fillMaxWidth().size(300.dp)
         )
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                fontSize = 30.sp,
+                text = "Purchase Price: $"
+            )
+            TextField(
+                value = loanViewModel.p,
+                onValueChange = { loanViewModel.p = it },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number
+                )
+            )
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                fontSize = 30.sp,
+                text = "Down Payment: $"
+            )
+            TextField(
+                value = loanViewModel.dp,
+                onValueChange = { loanViewModel.dp = it },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number
+                )
+            )
+        }
         Text(
             "Annual Interest Rate",
             fontSize = 24.sp,
         )
         Slider(
-            value = loanViewModel.ar,
+            value = loanViewModel.ar.toFloat(),
             onValueChange = { loanViewModel.ar = it },
             valueRange = 0f..20f,
             modifier = Modifier.padding(horizontal = 20.dp)
@@ -89,8 +123,8 @@ fun LoanPortrait(modifier: Modifier = Modifier, loanViewModel: LoanViewModel) {
                     modifier = Modifier.padding(vertical = 4.dp)
                 ) {
                     RadioButton(
-                        selected = loanViewModel.l == years,
-                        onClick = { loanViewModel.l = years }
+                        selected = loanViewModel.ll == years,
+                        onClick = { loanViewModel.ll = years }
                     )
                     Text(
                         text = "$years Years",
@@ -99,6 +133,17 @@ fun LoanPortrait(modifier: Modifier = Modifier, loanViewModel: LoanViewModel) {
                 }
             }
         }
+        Button(
+            onClick = {
+                loanViewModel.mp = Calculate(loanViewModel.p, loanViewModel.dp, loanViewModel.ar, loanViewModel.ll)
+            },
+            modifier = Modifier.padding(vertical = 16.dp)
+        ) {
+            Text("Calculate")
+        }
+        Text(
+            text = "Monthly Payment: $${loanViewModel.mp}"
+        )
     }
 }
 
@@ -122,4 +167,15 @@ fun LoanLandscape(modifier: Modifier = Modifier, loanViewModel: LoanViewModel) {
         Text("Landscape View", fontSize = 24.sp)
         Text("Interest Rate: ${String.format("%.1f%%", loanViewModel.ar)}", fontSize = 20.sp)
     }
+}
+
+
+
+fun Calculate(p: Int, dp: Int, ar: Double, ll: Int): Double {
+    val l = p - dp
+    if (l <= 0) return 0.0
+    val n = ll * 12
+    val mr = (ar/100)/12
+    if (mr == 0.0) return l / n.toDouble()
+    return mr * l / (1 - (1 + mr).pow(-n.toDouble()))
 }
